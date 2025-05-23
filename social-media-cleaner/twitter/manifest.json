@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "X Delete Replies",
+  "version": "1.0",
+  "description": "Automates deletion of replies on X (Twitter).",
+  "permissions": ["scripting", "tabs"],
+  "host_permissions": ["https://twitter.com/*", "https://x.com/*"],
+  "action": {
+    "default_title": "Delete Replies",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://twitter.com/*", "https://x.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
