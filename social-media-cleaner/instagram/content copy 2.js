@@ -33,22 +33,9 @@ function getVisibleCheckboxes() {
     .filter(box => box.offsetParent !== null);
 }
 
-function downloadLogBatch(batchLog, cycleNumber) {
-  if (!batchLog.length) return;
-  const filename = `instagram_comments_cycle${cycleNumber}_${Date.now()}.json`;
-  const blob = new Blob([JSON.stringify(batchLog, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-  console.log(`📥 Downloaded batch log: ${filename} (${batchLog.length} comments)`);
-}
-
 function downloadFinalMasterLog() {
   if (!deletedLog.length) return;
-  const filename = `instagram_comments_master_${Date.now()}.json`;
+  const filename = `deleted_comments_master_${Date.now()}.json`;
   const blob = new Blob([JSON.stringify(deletedLog, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -134,39 +121,26 @@ async function deleteInstagramComments(batchSize = 5, maxCycles = 100) {
     if (confirmDeleteBtn) {
       confirmDeleteBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
       confirmDeleteBtn.click();
-      console.log("✅ Confirmed deletion. Waiting 15 seconds...");
-      //deletedCount += selectedText.length;
-      //updateProgressCounter();
-      deletedLog.push(...selectedText);
+      console.log("✅ Confirmed deletion. Waiting 20 seconds...");
       deletedCount += selectedText.length;
+      deletedLog.push(...selectedText);
       updateProgressCounter();
-
-      // 🧠 If 20 or more comments collected, trigger download, reset, and continue
-      if (deletedLog.length >= 20) {
-        downloadFinalMasterLog();
-        console.log(`📦 Auto-saved master log after ${deletedLog.length} deletions.`);
-        deletedLog.length = 0; // reset log
-      }
-      await sleep(15000);
+      await sleep(20000);
     } else {
       console.warn("⚠️ Could not find or click confirmation delete button.");
       break;
     }
-
-    //downloadLogBatch(selectedText, cycle + 1);
-    deletedLog.push(...selectedText);
   }
 
-  // ✅ Download final master log
-  //downloadFinalMasterLog();
+  // ✅ Only download if 20 or more comments were deleted
   if (deletedCount >= 20) {
     downloadFinalMasterLog();
     console.log(`📦 Final master log saved after ${deletedCount} deletions.`);
   } else {
     console.log(`📝 Only ${deletedCount} comments deleted. Skipping master log download.`);
   }
-  console.log("🏁 All cycles complete.");
 
+  console.log("🏁 All cycles complete.");
 }
 
 function addControlButtons() {

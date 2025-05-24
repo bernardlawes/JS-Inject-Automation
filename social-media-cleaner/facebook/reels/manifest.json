@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Facebook Reels Privacy Setter",
+  "version": "1.0",
+  "description": "Automatically sets all Facebook Reels to 'Only Me'.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": [
+    "https://www.facebook.com/reels*",
+    "https://www.facebook.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "128": "icon.png"
+  }
+}

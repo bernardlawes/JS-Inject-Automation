@@ -69,7 +69,7 @@ function downloadFinalMasterLog() {
 
 async function deleteFacebookComments(maxCycles = 1000) {
 
-  let batchsize = 100;
+  let batchsize = 20;
 
   for (let cycle = 0; cycle < maxCycles; cycle++) {
     if (stopFlag) {
@@ -179,7 +179,7 @@ async function deleteFacebookComments(maxCycles = 1000) {
       }
       updateProgressCounter();
       console.log("🗑️ Deleted:", commentText);
-      await sleep(2000);
+      await sleep(1200);
     }
   }
 
