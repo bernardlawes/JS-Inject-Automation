@@ -5,6 +5,7 @@ function sleep(ms) {
 let deletedCount = 0;
 let stopFlag = false;
 const deletedLog = [];
+const skippedLog = [];
 
 function updateProgressCounter() {
   let counter = document.getElementById("fb-delete-counter");
@@ -42,7 +43,7 @@ function highlightElement(el) {
 
 function downloadLogFile(logArray, filenamePrefix = 'fb_deleted_comments') {
   if (!logArray.length) return;
-  const filename = `${filenamePrefix}_${Date.now()}.json`;
+  const filename = `${filenamePrefix}_${Date.now()}_${logArray.length}.json`;
   const blob = new Blob([JSON.stringify(logArray, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -53,139 +54,104 @@ function downloadLogFile(logArray, filenamePrefix = 'fb_deleted_comments') {
   console.log(`📦 Log saved: ${filename}`);
 }
 
-function downloadFinalMasterLog() {
+async function deleteFacebookComments(maxCycles = 10000) {
+  let cycle = 0;
+  let batchsize = 50;
+  let verbose = false;
+  let currentIndex = 0;
 
-  if (!deletedLog.length) return;
-  const filename = `fb_deleted_comments_${Date.now()}.json`;
-  const blob = new Blob([JSON.stringify(deletedLog, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-  console.log(`📦 Final master log saved: ${filename}`);
-}
+  console.log("🗑️ Starting Facebook comment deletion...");
 
-async function deleteFacebookComments(maxCycles = 1000) {
+  while (cycle < maxCycles && !stopFlag) {
+    const buttons = Array.from(document.querySelectorAll('[aria-label="Action options"]'));
 
-  let batchsize = 20;
-
-  for (let cycle = 0; cycle < maxCycles; cycle++) {
-    if (stopFlag) {
-      console.log("🛑 Deletion stopped by user.");
-      break;
-    }
-
-    console.log(`🔁 Cycle ${cycle + 1}`);
-
-    const firstBtn = document.querySelector('[aria-label="Action options"]');
-    if (!firstBtn) {
+    if (buttons.length === 0 || currentIndex >= buttons.length) {
       console.log("✅ No more comments to process.");
       break;
     }
 
-    firstBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    firstBtn.click();
-    await sleep(1500);
+    const btn = buttons[currentIndex];
+    if (!btn) {
+      console.warn("⚠️ Button not found at current index.");
+      currentIndex++;
+      continue;
+    }
+
+    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightElement(btn);
+    btn.click();
+    await sleep(300);
 
     const deleteSpan = Array.from(document.querySelectorAll('span'))
       .find(el => el.textContent.trim().toLowerCase() === 'delete');
 
-    if (deleteSpan) {
-      let commentText = '[unknown context]';
+    if (!deleteSpan) {
+      console.log(`⚠️ Skipping index ${currentIndex}: No 'Delete' option.`);
+      currentIndex++;
+      continue;
+    }
 
-      let node = firstBtn;
-      let container = null;
+    // Get context
+    let commentText = '[unknown comment]';
+    const container = btn.closest('[data-visualcompletion]') || btn.parentElement?.parentElement;
+    if (container && container.innerText) {
+      commentText = container.innerText.trim().replace(/\s+/g, ' ');
+    }
 
-      for (let i = 0; i < 6; i++) {
-        if (!node || !node.parentElement) break;
-        node = node.parentElement;
-        const text = node.innerText?.trim();
-        if (text && text.length > 20) {
-          container = node;
-          break;
-        }
-      }
+    deleteSpan.click();
+    await sleep(800);
 
-      if (container) {
-        commentText = container.innerText.trim().replace(/\s+/g, ' ');
-        console.log("📄 Captured raw comment context:", commentText);
-      } else {
-        console.warn("⚠️ Could not find a parent container with usable comment text.");
-      }
+    // Detect toast
+    const failureToast = Array.from(document.querySelectorAll('span')).find(
+      span => span.textContent.trim().includes("Something went wrong")
+    );
 
-      /*
-      // 🔍 Try to locate the row
-      let activityRow = firstBtn.closest('[role="article"]') || firstBtn.closest('[data-visualcompletion]');
-      if (!activityRow) {
-        //console.warn("❌ Could not locate activityRow container.");
-      } else {
-        console.log("✅ Found activityRow container:", activityRow);
+    if (failureToast) {
+      console.warn(`❌ Deletion failed at index ${currentIndex}. Skipping.`);
 
-        const allSpans = Array.from(activityRow.querySelectorAll('span'));
-        console.log(`🔍 Found ${allSpans.length} spans:`);
+      const closeBtn = document.querySelector('[aria-label="Close"]');
+      if (closeBtn) closeBtn.click();
 
-        allSpans.forEach((span, index) => {
-          const style = span.getAttribute('style') || '[no style]';
-          const text = span.textContent.trim();
-          console.log(`🧪 [${index}] "${text}" — style: ${style}`);
-        });
-
-        // 🔧 Manually set the index after inspection
-        const commentIndex = -1; // ← Replace with correct index from console
-
-        if (commentIndex >= 0 && commentIndex < allSpans.length) {
-          const commentSpan = allSpans[commentIndex];
-          commentText = commentSpan.textContent.trim();
-          highlightElement(commentSpan);
-          console.log("✅ Captured comment by index:", commentText);
-        } else {
-          console.warn("⚠️ Comment index not selected or out of bounds.");
-        }
-
-        // ⏱ Timestamp
-        const timeSpan = allSpans.find(span => /\d{1,2}:\d{2}/.test(span.textContent));
-        if (timeSpan) {
-          timestamp = timeSpan.textContent.trim();
-        }
-
-        // 🎯 Post target name
-        const strongs = activityRow.querySelectorAll('strong a');
-        if (strongs && strongs.length > 1) {
-          targetName = strongs[1].textContent.trim();
-        }
-
-        // 🔗 Link to original post
-        const postAnchor = Array.from(activityRow.querySelectorAll('a'))
-          .find(a => a.href.includes('facebook.com') && a.href.includes('/posts/'));
-        if (postAnchor) {
-          postLink = postAnchor.href;
-        }
-      }
-      */
-      deleteSpan.click();
-      await sleep(1000);
-
-      deletedLog.push({
+      skippedLog.push({
         comment: commentText,
-        deletedAt: new Date().toISOString()
+        skippedAt: new Date().toISOString(),
+        reason: "Deletion failed - toast error"
       });
 
-      deletedCount++;
-      if (deletedCount % batchsize === 0) {
-        downloadLogFile(deletedLog, 'fb_deleted_batch');
-        deletedLog.length = 0; // Reset log
-      }
-      updateProgressCounter();
-      console.log("🗑️ Deleted:", commentText);
-      await sleep(1200);
+      currentIndex++;
+      continue;
     }
+
+    // Deletion succeeded
+    deletedLog.push({
+      comment: commentText,
+      deletedAt: new Date().toISOString()
+    });
+
+    deletedCount++;
+    updateProgressCounter();
+
+    if (verbose) {
+      console.log("🗑️ Deleted:", commentText);
+    } else if (deletedCount % 25 === 0) {
+      console.log(`🔁 Progress: ${deletedCount} deletions`);
+    }
+
+    if (deletedCount % batchsize === 0) {
+      downloadLogFile(deletedLog, 'fb_deleted_batch');
+      deletedLog.length = 0;
+    }
+
+    // ✅ Don't increment index — DOM has shifted
+    await sleep(300);
+    cycle++;
   }
 
   downloadLogFile(deletedLog, 'fb_deleted_batch');
+  downloadLogFile(skippedLog, 'fb_skipped_comments');
   console.log("🏁 Finished deleting Facebook comments.");
 }
+
 
 function addControlButtons() {
   if (document.getElementById('fb-delete-btn')) return;
@@ -230,6 +196,7 @@ function addControlButtons() {
     stopFlag = false;
     deletedCount = 0;
     deletedLog.length = 0;
+    skippedLog.length = 0;
     updateProgressCounter();
     deleteFacebookComments();
   };
@@ -237,7 +204,8 @@ function addControlButtons() {
   stopBtn.onclick = () => {
     stopFlag = true;
     downloadLogFile(deletedLog, 'fb_deleted_batch');
-    console.log("🛑 Manual stop triggered. Final log saved.");
+    downloadLogFile(skippedLog, 'fb_skipped_comments');
+    console.log("🛑 Manual stop triggered. Final logs saved.");
   };
 
   container.appendChild(startBtn);

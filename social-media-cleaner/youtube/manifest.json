@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Comment Deleter",
+  "version": "1.0",
+  "description": "Bulk delete your YouTube comments from your activity log with logging and control buttons.",
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": ["scripting", "activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://myactivity.google.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_title": "YouTube Comment Deleter",
+    "default_icon": "icon.png"
+  }
+}
