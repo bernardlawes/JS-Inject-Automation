@@ -103,3 +103,34 @@ If preferred, you can copy the contents of any `content.js` and paste it into th
 │       └── icon.png
 │
 └── README.md
+
+📁 Logs & Exports
+Most tools support:
+
+✅ Deleted comment/post export (JSON format)
+
+❌ Skipped items log with reasons (e.g. error, UI change)
+
+⏱ Batch download every N deletions or on Stop
+
+📜 License
+MIT License — Free for personal use, modification, and contribution with attribution.
+
+📬 Contributing
+Pull requests welcome for:
+
+Fixes to broken selectors
+
+New platform support
+
+UX improvements (floating UI, feedback, error handling)
+
+🙋 FAQ
+Q: Can this break if the UI changes?
+Yes — DOM changes can affect selectors. Open an issue or inspect the HTML if your automation stops working.
+
+Q: Will this get me banned?
+Use at your own risk. These tools simulate user actions with delays but are still automation.
+
+Q: Can I combine all tools into one extension?
+You could, but I recommend keeping them separate for clarity and targeted deployment.
