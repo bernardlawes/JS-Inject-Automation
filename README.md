@@ -14,6 +14,9 @@ Organized into separate tools under `/facebook/`:
 - `timeline/`: Hide or delete timeline posts (e.g. Reels, status updates)
 - `activity-posts/`: Set audience visibility to "Only Me" from Activity Log
 
+### ✅ Logging
+All of the automations include logging, and enabled to automatically downloaid  these logs as json files, after a specified number of log entries.
+
 ### 📺 YouTube
 - `delete_comments/`: Remove comment history from [myactivity.google.com](https://myactivity.google.com)
 - `delete_livechat/`: Clear live chat logs
