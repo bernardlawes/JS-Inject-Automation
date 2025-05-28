@@ -1,4 +1,4 @@
-# 🧩 Browser Automation - JS Automation Toolkit
+# 🧩 Social Media Browser Automation - A JS Injection Toolkit
 
 A collection of browser extension scripts that automate repetitive actions on websites, like social media platforms, using injected JavaScript. Each automation is packaged as a self-contained extension with a `manifest.json`, `content.js`, and `icon.png`.
 
